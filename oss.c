@@ -21,7 +21,7 @@ struct PCB {
 const int BUFF_SZ = sizeof(int)*2;
 int shm_key;
 int shm_id;
-struct PCB processTable[20];
+struct PCB p[20];
 
 int parse(int argc, char *argv[], int &proc, int &simul, float &time_limit, float &interval);
 
@@ -51,27 +51,42 @@ int main(int argc, char* argv[]) {
 	<< "-t " << time_limit << endl
 	<< "-i " << interval << endl;
 
+	int i = 0;
 	while(total < proc) { //When the amount of processes ran reaches the amount of processes given it will stop running more processes
-		incrementClock(sec, nano); 
+		incrementClock(sec, nano);
+		
+
+		
+	
         	if(proc_running < simul) { //This controls how many processes are running at a single time
                 	int pid = fork(); //creates copy of process that runs at the same time as eachother
+			p[i].occupied = true;
+			p[i].startSeconds = *sec;
+                	p[i].startNano = *nano;
+
                 	if (pid == -1) {
                         	cout <<"Failed to launch child" << endl;
                         	exit(1);
                 	}
                 	else if (pid == 0) { //seperates child copy from parent copy
+				p[i].pid = getpid();
+
 				int seconds = time_limit;
                                 int nano_seconds = (time_limit - seconds) * 1000000000;
-                        	cout << "Child has been launched, its pid is: " << getpid() << endl; //announcing			 		
+				
+				p[i].endingTimeSeconds = *sec + seconds;
+        			p[i].endingTimeNano = *nano + nano_seconds;
+				i++;				
                         	execlp("./worker","./worker",to_string(seconds).c_str(), to_string(nano_seconds).c_str(), (char*) NULL); //calls child and ends
                 	}
                 	proc_running++; //parent keeps count of processes running and total
                 	total++;
         	}
         	else { //If the processes running currently goes over the simul limit given the parent will wait until it is done
-                        cout << "Hello I am the parent, my pid is: " << getpid() << endl;
-                	//put wait call here? 
-                        proc_running = proc_running - 1;
+                	int pid = waitpid(-1, &status, WNOHANG);
+			if (pid > 0) {
+				proc_running = proc_running - 1;
+			}
         	}
 	}
 
