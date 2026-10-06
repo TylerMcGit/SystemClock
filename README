@@ -1,1 +1,26 @@
-Hello
+Name: Tyler McFarland
+Date: 10/1/2026
+Environment: opsys (Linux), vi
+
+How to compile the project:
+   Type 'make'
+
+Example of how to run the project:
+   ./oss -n 5 -s 3 -t 4.5 -i 0.2
+
+How it works:
+oss makes a simulated clock in shared memory and launches workers with fork
+and exec. It never sleeps. Every loop it moves the clock forward, prints the
+process table every half second of simulated time, checks if a worker
+finished with waitpid (WNOHANG), and launches a new worker if -n, -s and -i
+allow it. When a worker finishes its spot in the table gets cleared and the
+next worker uses it. At the end it prints how many workers ran and how long
+they ran combined.
+
+Each worker reads the clock, adds the time it was given to get when it should
+stop, and keeps checking the clock until that time passes. It prints every
+time the seconds change and once more when it terminates.
+
+oss stops after 60 real seconds or when you hit Ctrl-C. Either way it kills
+the workers and frees the shared memory. If shared memory ever gets left
+behind run ./memclean.sh
